@@ -8,6 +8,7 @@
     "server:dev": "tsx watch src/server/main.ts",
     "server:build": "vite build --config vite.server.config.ts",
     "server:start": "node dist-server/main.js",
+    "server:type": "tsc -p src/server/tsconfig.json",
     "type": "tsc -p src/app-public/tsconfig.json --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

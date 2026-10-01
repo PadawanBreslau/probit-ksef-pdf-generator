@@ -1,4 +1,5 @@
 import express, { Request, RequestHandler } from 'express';
+import { IncomingMessage } from 'http';
 import multer from 'multer';
 import { AdditionalDataTypes } from '../../lib-public/types/common.types';
 import { badRequest, unsupportedMediaType } from '../errors/http-error';
@@ -10,15 +11,15 @@ const MULTIPART_PATTERN = /^multipart\/form-data$/i;
 const XML_CONTENT_TYPE_PATTERN = /^(application|text)\/([\w.-]+\+)?xml$/i;
 const MAX_FILENAME_LENGTH = 100;
 
-function getMediaType(req: Request): string {
+function getMediaType(req: IncomingMessage): string {
   return (req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase();
 }
 
-export function isXmlContentType(req: Request): boolean {
+export function isXmlContentType(req: IncomingMessage): boolean {
   return XML_CONTENT_TYPE_PATTERN.test(getMediaType(req));
 }
 
-export function isMultipartContentType(req: Request): boolean {
+export function isMultipartContentType(req: IncomingMessage): boolean {
   return MULTIPART_PATTERN.test(getMediaType(req));
 }
 

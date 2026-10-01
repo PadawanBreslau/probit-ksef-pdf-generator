@@ -11,6 +11,15 @@ Biblioteka do generowania wizualizacji PDF faktur oraz UPO na podstawie plików 
     - Generowanie wizualizacji PDF UPO
     - Generowanie wizualizacji PDF faktur PEF
 
+Repozytorium udostępnia także serwer REST (`src/server`), który generuje PDF na podstawie
+przesłanego pliku XML. Opis uruchomienia znajduje się w [DEV_README.md](DEV_README.md),
+a dokumentacja endpointów w [docs/api.apib](docs/api.apib).
+
+```bash
+npm run server
+curl -X POST http://localhost:3000/api/v1/invoices/pdf -F "file=@assets/invoice.xml" -o invoice.pdf
+```
+
 ---
 
 ## 2. Jak uruchomić aplikację pokazową

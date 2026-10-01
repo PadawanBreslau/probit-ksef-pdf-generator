@@ -21,13 +21,7 @@ export default defineConfig(({ mode }) => {
         emptyOutDir: true,
         formats: ['es', 'umd'],
         rollupOptions: {
-          external: [
-            /\.spec\.ts$/,
-            /\.test\.ts$/,
-            'src/app-private',
-            'src/app-public',
-            'src/server',
-          ],
+          external: [/\.spec\.ts$/, /\.test\.ts$/, 'src/app-private', 'src/app-public', 'src/server'],
         },
       },
     },
