@@ -16,6 +16,7 @@ module.exports = tseslint.config({
     'src/lib-public/types/**',
     '**/*.spec.ts',
     'dist/**',
+    'dist-server/**',
     'src/types**/*.ts',
   ],
   files: ['**/*.ts'],

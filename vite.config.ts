@@ -21,7 +21,13 @@ export default defineConfig(({ mode }) => {
         emptyOutDir: true,
         formats: ['es', 'umd'],
         rollupOptions: {
-          external: [/\.spec\.ts$/, /\.test\.ts$/, 'src/app-private', 'src/app-public'],
+          external: [
+            /\.spec\.ts$/,
+            /\.test\.ts$/,
+            'src/app-private',
+            'src/app-public',
+            'src/server',
+          ],
         },
       },
     },
@@ -49,7 +55,7 @@ export default defineConfig(({ mode }) => {
         entryRoot: libRoot,
         insertTypesEntry: true,
         outDir: path.resolve(__dirname, 'dist'),
-        exclude: ['src/app-public'],
+        exclude: ['src/app-public', 'src/server'],
       }),
     ],
 

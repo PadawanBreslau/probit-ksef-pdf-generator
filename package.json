@@ -4,7 +4,13 @@
   "scripts": {
     "dev": "vite --mode public --config vite.config.ts",
     "build": "vite build --mode production",
+    "server": "tsx src/server/main.ts",
+    "server:dev": "tsx watch src/server/main.ts",
+    "server:build": "vite build --config vite.server.config.ts",
+    "server:start": "node dist-server/main.js",
     "type": "tsc -p src/app-public/tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:ci": "vitest run --coverage"
@@ -30,7 +36,11 @@
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@stylistic/eslint-plugin": "^5.2.3",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.3.0",
+    "@types/node": "^26.6.3",
     "@types/pdfmake": "^0.3.2",
+    "@types/supertest": "^7.2.1",
     "@typescript-eslint/eslint-plugin": "^8.40.0",
     "@typescript-eslint/parser": "^8.40.0",
     "@vitest/coverage-v8": "^3.2.4",
@@ -43,6 +53,8 @@
     "jiti": "^2.5.1",
     "jsdom": "^30.0.1",
     "prettier": "^3.6.2",
+    "supertest": "^7.3.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.40.0",
     "vite": "^7.0.6",
@@ -50,9 +62,11 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "express": "^5.2.1",
     "i18next": "^25.8.4",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",
+    "multer": "^2.4.0",
     "pdfmake": "0.3.11",
     "xml-js": "^1.6.11"
   }
