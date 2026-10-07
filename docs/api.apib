@@ -1,0 +1,213 @@
+FORMAT: 1A
+HOST: http://localhost:3000
+
+# KSeF PDF Generator API
+
+REST API that converts KSeF XML documents (invoices and UPO receipts) into PDF visualisations.
+It exposes the PDF generators of the `@akmf/ksef-fe-invoice-converter` library over HTTP.
+
+## Supported input schemas
+
+| Document | Schemas |
+| --- | --- |
+| Invoice | `FA (1)`, `FA (2)`, `FA (3)`, `FA_RR (1)` |
+| PEF invoice | `urn:fdc:peppol.eu:2017:poacc:billing:01:1.0`, `urn:fdc:www.efaktura.gov.pl:ver2.0:corr_inv:ver4.0`, `urn:fdc:www.efaktura.gov.pl:ver2.0:plinv:ver1.4` |
+| UPO | `UPO v4_2` / `v4-3` |
+
+## Sending the XML document
+
+Every conversion endpoint accepts the XML payload in two interchangeable ways:
+
++ `multipart/form-data` with the document in the **`file`** field. Additional metadata may be
+  sent as extra text fields of the same form.
++ A raw request body with a `Content-Type` of `application/xml` or `text/xml`. Additional
+  metadata must then be supplied as query parameters.
+
+Both UTF-8 and UTF-16 (LE/BE) encoded documents are supported; the encoding is detected from the
+byte order mark. Uploads larger than `MAX_UPLOAD_SIZE_BYTES` (10 MiB by default) are rejected
+with `413`.
+
+## Error format
+
+Every failure is returned as JSON:
+
+```json
+{
+  "error": {
+    "code": "UNSUPPORTED_XML_SCHEMA",
+    "message": "The XML document does not match any supported schema (FA(1), FA(2), FA(3), FA_RR(1), PEF or UPO)."
+  }
+}
+```
+
+| HTTP status | `code` | Meaning |
+| --- | --- | --- |
+| 400 | `MISSING_XML` | No XML document was sent. |
+| 400 | `EMPTY_XML` | The uploaded document contains no bytes. |
+| 400 | `INVALID_XML` | The payload is not a well-formed XML document the generators can render. |
+| 400 | `UNSUPPORTED_XML_SCHEMA` | The XML is valid but its schema version is not supported. |
+| 400 | `UNEXPECTED_FILE_FIELD` | A file was uploaded in a field other than `file`. |
+| 400 | `INVALID_UPLOAD` | The multipart request could not be parsed. |
+| 404 | `NOT_FOUND` | Unknown endpoint. |
+| 413 | `PAYLOAD_TOO_LARGE` | The document exceeds the configured upload limit. |
+| 415 | `UNSUPPORTED_MEDIA_TYPE` | The `Content-Type` is neither multipart nor XML. |
+| 500 | `INTERNAL_SERVER_ERROR` | Unexpected server failure. |
+
+# Group Health
+
+## Health [/health]
+
+The health endpoint is available both at the root path and below the API prefix
+(`/api/v1/health`).
+
+### Check the service health [GET]
+
++ Response 200 (application/json)
+
+    + Attributes
+        + status: `ok` (string, required) - Always `ok` when the service is running.
+        + uptime: 42 (number, required) - Process uptime in seconds.
+
+    + Body
+
+            {
+              "status": "ok",
+              "uptime": 42
+            }
+
+# Group Invoices
+
+## Invoice PDF [/api/v1/invoices/pdf{?nrKSeF,acDate,qrCode,qr2Code,watermark,isMobile}]
+
++ Parameters
+    + nrKSeF: `5555555555-20250808-9231003CA67B-BE` (string, optional) - KSeF number printed in the document header.
+    + acDate: `23.06.2026` (string, optional) - Acceptance date printed next to the KSeF number.
+    + qrCode: `https://ksef-test.mf.gov.pl/invoice/...` (string, optional) - Payload of the first QR code.
+    + qr2Code: `https://ksef-test.mf.gov.pl/invoice/...` (string, optional) - Payload of the second QR code.
+    + watermark: `KOPIA` (string, optional) - Text rendered as a watermark.
+    + isMobile: `false` (boolean, optional) - Renders the mobile variant of the layout when `true` or `1`.
+
+### Convert an invoice XML into PDF [POST]
+
+Converts an `FA`, `FA_RR` or PEF invoice XML document into its PDF visualisation.
+The response body is the binary PDF.
+
+When the document is uploaded as `multipart/form-data`, the generated file is named after the
+uploaded file (with a `.pdf` extension); otherwise it is named `invoice.pdf`.
+
++ Request Multipart upload (multipart/form-data; boundary=---BOUNDARY)
+
+    + Body
+
+            -----BOUNDARY
+            Content-Disposition: form-data; name="file"; filename="faktura.xml"
+            Content-Type: application/xml
+
+            <?xml version="1.0" encoding="utf-8"?>
+            <Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">...</Faktura>
+            -----BOUNDARY
+            Content-Disposition: form-data; name="nrKSeF"
+
+            5555555555-20250808-9231003CA67B-BE
+            -----BOUNDARY--
+
++ Request Raw XML body (application/xml)
+
+    + Body
+
+            <?xml version="1.0" encoding="utf-8"?>
+            <Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">...</Faktura>
+
++ Response 200 (application/pdf)
+
+    + Headers
+
+            Content-Disposition: attachment; filename="faktura.pdf"
+
+    + Body
+
+            %PDF-1.3 ... binary content ...
+
++ Response 400 (application/json)
+
+    + Body
+
+            {
+              "error": {
+                "code": "UNSUPPORTED_XML_SCHEMA",
+                "message": "The XML document does not match any supported schema (FA(1), FA(2), FA(3), FA_RR(1), PEF or UPO)."
+              }
+            }
+
++ Response 413 (application/json)
+
+    + Body
+
+            {
+              "error": {
+                "code": "PAYLOAD_TOO_LARGE",
+                "message": "The uploaded XML document is too large."
+              }
+            }
+
++ Response 415 (application/json)
+
+    + Body
+
+            {
+              "error": {
+                "code": "UNSUPPORTED_MEDIA_TYPE",
+                "message": "Unsupported Content-Type. Send the XML document as multipart/form-data (field \"file\") or as a raw application/xml body."
+              }
+            }
+
+# Group UPO
+
+## UPO PDF [/api/v1/upo/pdf]
+
+### Convert an UPO XML into PDF [POST]
+
+Converts an official KSeF confirmation of receipt (UPO) into its PDF visualisation.
+The endpoint accepts the same request shapes as the invoice endpoint but ignores the invoice
+metadata parameters. The generated file is named after the uploaded file, or `upo.pdf` when a
+raw XML body is posted.
+
++ Request Multipart upload (multipart/form-data; boundary=---BOUNDARY)
+
+    + Body
+
+            -----BOUNDARY
+            Content-Disposition: form-data; name="file"; filename="upo.xml"
+            Content-Type: application/xml
+
+            <?xml version="1.0" encoding="utf-8"?>
+            <Potwierdzenie xmlns="http://upo.schematy.mf.gov.pl/KSeF/v4-3">...</Potwierdzenie>
+            -----BOUNDARY--
+
++ Request Raw XML body (application/xml)
+
+    + Body
+
+            <?xml version="1.0" encoding="utf-8"?>
+            <Potwierdzenie xmlns="http://upo.schematy.mf.gov.pl/KSeF/v4-3">...</Potwierdzenie>
+
++ Response 200 (application/pdf)
+
+    + Headers
+
+            Content-Disposition: attachment; filename="upo.pdf"
+
+    + Body
+
+            %PDF-1.3 ... binary content ...
+
++ Response 400 (application/json)
+
+    + Body
+
+            {
+              "error": {
+                "code": "INVALID_XML",
+                "message": "The uploaded file is not a valid XML document."
+              }
+            }
